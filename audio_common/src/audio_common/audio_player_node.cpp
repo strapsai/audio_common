@@ -43,13 +43,29 @@ AudioPlayerNode::AudioPlayerNode() : Node("audio_player_node") {
   // Get parameters
   this->channels_ = this->get_parameter("channels").as_int();
   this->device_ = this->get_parameter("device").as_int();
-
-  // Initialize PortAudio
+  std::string my_device_name = "UACDemo";
   PaError err = Pa_Initialize();
   if (err != paNoError) {
     RCLCPP_ERROR(this->get_logger(), "PortAudio error: %s",
                  Pa_GetErrorText(err));
     throw std::runtime_error("Failed to initialize PortAudio");
+  }
+  int numDevices = Pa_GetDeviceCount  ();
+  const PaDeviceInfo *deviceInfo;
+
+  for (int i = 0; i < numDevices; i++) {
+      deviceInfo = Pa_GetDeviceInfo(i);
+      printf("Device %d: %s\n", i, deviceInfo->name);
+
+      if (deviceInfo->maxOutputChannels > 0) {
+          printf("Output Device %d: %s\n", i, deviceInfo->name);
+          auto isFound = strstr(std::string(deviceInfo->name).c_str(), my_device_name.c_str());
+          if (isFound) {
+              this->device_ = i;
+              printf("final Device %d: %s\n", i, deviceInfo->name);
+              break;
+          }
+      }
   }
 
   // Subscription to audio topic

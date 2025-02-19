@@ -27,6 +27,8 @@
 #include "audio_common/audio_capturer_node.hpp"
 #include "audio_common_msgs/msg/audio_stamped.hpp"
 
+#include <cstring>
+
 using namespace audio_common;
 
 AudioCapturerNode::AudioCapturerNode() : Node("audio_capturer_node") {
@@ -54,6 +56,27 @@ AudioCapturerNode::AudioCapturerNode() : Node("audio_capturer_node") {
                  Pa_GetErrorText(err));
     throw std::runtime_error("Failed to initialize PortAudio");
   }
+  std::string my_device_name = "RØDE VideoMic";
+  int numDevices = Pa_GetDeviceCount();
+  const PaDeviceInfo *deviceInfo;
+  for (int i = 0; i < numDevices; i++) {
+      deviceInfo = Pa_GetDeviceInfo(i);
+      printf("Device %d: %s\n", i, deviceInfo->name);
+
+      if (deviceInfo->maxInputChannels > 0) {
+          printf("Input Device %d: %s\n", i, deviceInfo->name);
+          auto isFound = strstr(std::string(deviceInfo->name).c_str(), my_device_name.c_str());
+          if (isFound) {
+              device = i;
+              printf("final Device %d: %s\n", i, deviceInfo->name);
+              break;
+          }
+      }
+  }
+
+  double defaultSampleRate = deviceInfo->defaultSampleRate;
+  printf("Default sample rate: %.0f Hz\n", defaultSampleRate);
+  this->rate_ = (int)defaultSampleRate;
 
   PaStreamParameters inputParameters;
   inputParameters.device = (device >= 0) ? device : Pa_GetDefaultInputDevice();
