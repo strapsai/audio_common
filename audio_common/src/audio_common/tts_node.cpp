@@ -98,15 +98,22 @@ void TtsNode::execute_callback(
   int volume = static_cast<int>(goal->volume * 100);
 
   // Create audio file using espeak
-  char temp_file[] = "/tmp/tts_audio.wav";
+  char temp_file[] = "tts_audio.wav";
   std::stringstream cmd;
   cmd << "espeak -v" << language << " -s" << rate << " -a" << volume << " -w "
       << temp_file << " '" << text << "'";
 
   std::system(cmd.str().c_str());
 
+  char temp_file_48k[] = "tts_audio_48k.wav";
+  std::stringstream cmd1;
+  cmd1 << "sox " << temp_file <<" -r " << 48000 << " " << temp_file_48k<<"";
+  printf(cmd1.str().c_str());
+
+  std::system(cmd1.str().c_str());
+
   // Read audio file
-  audio_common::WaveFile wf(temp_file);
+  audio_common::WaveFile wf(temp_file_48k);
   if (!wf.open()) {
     RCLCPP_ERROR(this->get_logger(), "Error opening audio file: %s", temp_file);
     goal_handle->abort(result);
@@ -152,6 +159,7 @@ void TtsNode::execute_callback(
 
   // Cleanup and set result
   std::remove(temp_file);
+  std::remove(temp_file_48k);
 
   result->text = text;
   goal_handle->succeed(result);
