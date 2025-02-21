@@ -72,7 +72,7 @@ AudioPlayerNode::AudioPlayerNode() : Node("audio_player_node") {
   auto qos_profile = rclcpp::SensorDataQoS();
   this->audio_sub_ =
       this->create_subscription<audio_common_msgs::msg::AudioStamped>(
-          "audio", qos_profile,
+          "audio/speaker", qos_profile,
           std::bind(&AudioPlayerNode::audio_callback, this, _1));
 
   RCLCPP_INFO(this->get_logger(), "AudioPlayer node started");

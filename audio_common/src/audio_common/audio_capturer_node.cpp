@@ -105,7 +105,7 @@ AudioCapturerNode::AudioCapturerNode() : Node("audio_capturer_node") {
 
   this->audio_pub_ =
       this->create_publisher<audio_common_msgs::msg::AudioStamped>(
-          "audio", rclcpp::SensorDataQoS());
+          "audio/microphone", rclcpp::SensorDataQoS());
 
   RCLCPP_INFO(this->get_logger(), "AudioCapturer node started");
 }
