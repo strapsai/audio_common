@@ -50,7 +50,7 @@ TtsNode::TtsNode() : Node("tts_node") {
 
   this->player_pub_ =
       this->create_publisher<audio_common_msgs::msg::AudioStamped>(
-          "audio", rclcpp::SensorDataQoS());
+          "audio/speaker", rclcpp::SensorDataQoS());
 
   // Action server
   this->action_server_ = rclcpp_action::create_server<TTS>(
