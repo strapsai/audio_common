@@ -28,6 +28,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "audio_common_msgs/msg/audio_stamped.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 namespace audio_common {
 
@@ -40,15 +41,16 @@ private:
   // ROS 2 subscription for audio messages
   rclcpp::Subscription<audio_common_msgs::msg::AudioStamped>::SharedPtr
       audio_sub_;
-
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr status_pub_;
   // PortAudio stream dictionary
   std::unordered_map<std::string, PaStream *> stream_dict_;
-
+  rclcpp::TimerBase::SharedPtr timer_;
   // Parameters
   int channels_;
   int device_;
 
   // Methods
+  void timer_callback();
   void
   audio_callback(const audio_common_msgs::msg::AudioStamped::SharedPtr msg);
   template <typename T>

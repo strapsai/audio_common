@@ -57,6 +57,7 @@ AudioCapturerNode::AudioCapturerNode() : Node("audio_capturer_node") {
     throw std::runtime_error("Failed to initialize PortAudio");
   }
   std::string my_device_name = "RØDE VideoMic";
+  bool isFound = false;
   int numDevices = Pa_GetDeviceCount();
   const PaDeviceInfo *deviceInfo;
   for (int i = 0; i < numDevices; i++) {
@@ -65,13 +66,18 @@ AudioCapturerNode::AudioCapturerNode() : Node("audio_capturer_node") {
 
       if (deviceInfo->maxInputChannels > 0) {
           printf("Input Device %d: %s\n", i, deviceInfo->name);
-          auto isFound = strstr(std::string(deviceInfo->name).c_str(), my_device_name.c_str());
+          isFound = strstr(std::string(deviceInfo->name).c_str(), my_device_name.c_str());
           if (isFound) {
               device = i;
               printf("final Device %d: %s\n", i, deviceInfo->name);
               break;
           }
       }
+  }
+
+  if (!isFound) {
+      RCLCPP_ERROR(this->get_logger(), "Device not found: %s", my_device_name);
+      rclcpp::shutdown();
   }
 
   double defaultSampleRate = deviceInfo->defaultSampleRate;

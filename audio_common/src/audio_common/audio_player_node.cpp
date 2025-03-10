@@ -31,7 +31,6 @@
 #include "audio_common/audio_player_node.hpp"
 #include "audio_common_msgs/msg/audio.hpp"
 #include "audio_common_msgs/msg/audio_stamped.hpp"
-
 using namespace audio_common;
 using std::placeholders::_1;
 
@@ -52,14 +51,14 @@ AudioPlayerNode::AudioPlayerNode() : Node("audio_player_node") {
   }
   int numDevices = Pa_GetDeviceCount  ();
   const PaDeviceInfo *deviceInfo;
-
+  bool isFound = false;
   for (int i = 0; i < numDevices; i++) {
       deviceInfo = Pa_GetDeviceInfo(i);
       printf("Device %d: %s\n", i, deviceInfo->name);
 
       if (deviceInfo->maxOutputChannels > 0) {
           printf("Output Device %d: %s\n", i, deviceInfo->name);
-          auto isFound = strstr(std::string(deviceInfo->name).c_str(), my_device_name.c_str());
+          isFound = strstr(std::string(deviceInfo->name).c_str(), my_device_name.c_str());
           if (isFound) {
               this->device_ = i;
               printf("final Device %d: %s\n", i, deviceInfo->name);
@@ -68,14 +67,28 @@ AudioPlayerNode::AudioPlayerNode() : Node("audio_player_node") {
       }
   }
 
+  if (!isFound) {
+      RCLCPP_ERROR(this->get_logger(), "Device not found: %s", my_device_name);
+      rclcpp::shutdown();
+  }
+
   // Subscription to audio topic
   auto qos_profile = rclcpp::SensorDataQoS();
   this->audio_sub_ =
       this->create_subscription<audio_common_msgs::msg::AudioStamped>(
           "audio/speaker", qos_profile,
           std::bind(&AudioPlayerNode::audio_callback, this, _1));
-
+  this->status_pub_ =
+      this->create_publisher<std_msgs::msg::Bool>("audio/speaker_status",
+                                                  rclcpp::SensorDataQoS());
+  timer_ = this->create_wall_timer(std::chrono::seconds(5), std::bind(&AudioPlayerNode::timer_callback, this));
   RCLCPP_INFO(this->get_logger(), "AudioPlayer node started");
+}
+
+void AudioPlayerNode::timer_callback(){
+  std_msgs::msg::Bool msg;
+  msg.data = true;
+  status_pub_->publish(msg);
 }
 
 AudioPlayerNode::~AudioPlayerNode() {
