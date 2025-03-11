@@ -51,51 +51,54 @@ TtsNode::TtsNode() : Node("tts_node") {
   this->player_pub_ =
       this->create_publisher<audio_common_msgs::msg::AudioStamped>(
           "audio/speaker", rclcpp::SensorDataQoS());
+  
+  this->text_sub =
+      this->create_subscription<std_msgs::msg::String>(
+          "audio/text", rclcpp::SensorDataQoS(),
+          std::bind(&TtsNode::execute_callback, this, _1));
 
-  // Action server
-  this->action_server_ = rclcpp_action::create_server<TTS>(
-      this, "say", std::bind(&TtsNode::handle_goal, this, _1, _2),
-      std::bind(&TtsNode::handle_cancel, this, _1),
-      std::bind(&TtsNode::handle_accepted, this, _1));
+  // // Action server
+  // this->action_server_ = rclcpp_action::create_server<TTS>(
+  //     this, "say", std::bind(&TtsNode::handle_goal, this, _1, _2),
+  //     std::bind(&TtsNode::handle_cancel, this, _1),
+  //     std::bind(&TtsNode::handle_accepted, this, _1));
 
   RCLCPP_INFO(this->get_logger(), "TTS node started");
 }
 
-rclcpp_action::GoalResponse
-TtsNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
-                     std::shared_ptr<const TTS::Goal> goal) {
-  (void)uuid;
-  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-}
+// rclcpp_action::GoalResponse
+// TtsNode::handle_goal(const rclcpp_action::GoalUUID &uuid,
+//                      std::shared_ptr<const TTS::Goal> goal) {
+//   (void)uuid;
+//   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+// }
 
-rclcpp_action::CancelResponse
-TtsNode::handle_cancel(const std::shared_ptr<GoalHandleTTS> goal_handle) {
-  RCLCPP_INFO(this->get_logger(), "Canceling TTS...");
-  (void)goal_handle;
-  return rclcpp_action::CancelResponse::ACCEPT;
-}
+// rclcpp_action::CancelResponse
+// TtsNode::handle_cancel(const std::shared_ptr<GoalHandleTTS> goal_handle) {
+//   RCLCPP_INFO(this->get_logger(), "Canceling TTS...");
+//   (void)goal_handle;
+//   return rclcpp_action::CancelResponse::ACCEPT;
+// }
 
-void TtsNode::handle_accepted(
-    const std::shared_ptr<GoalHandleTTS> goal_handle) {
-  std::unique_lock<std::mutex> lock(this->goal_lock_);
-  if (this->goal_handle_ != nullptr && this->goal_handle_->is_active()) {
-    auto result = std::make_shared<TTS::Result>();
-    this->goal_handle_->abort(result);
-    this->goal_handle_ = goal_handle;
-  }
+// void TtsNode::handle_accepted(
+//     const std::shared_ptr<GoalHandleTTS> goal_handle) {
+//   std::unique_lock<std::mutex> lock(this->goal_lock_);
+//   if (this->goal_handle_ != nullptr && this->goal_handle_->is_active()) {
+//     auto result = std::make_shared<TTS::Result>();
+//     this->goal_handle_->abort(result);
+//     this->goal_handle_ = goal_handle;
+//   }
 
-  std::thread{std::bind(&TtsNode::execute_callback, this, _1), goal_handle}
-      .detach();
-}
+//   std::thread{std::bind(&TtsNode::execute_callback, this, _1), goal_handle}
+//       .detach();
+// }
 
 void TtsNode::execute_callback(
-    const std::shared_ptr<GoalHandleTTS> goal_handle) {
-  auto result = std::make_shared<TTS::Result>();
-  const auto goal = goal_handle->get_goal();
-  std::string text = goal->text;
-  std::string language = goal->language;
-  int rate = static_cast<int>(goal->rate * 175);
-  int volume = static_cast<int>(goal->volume * 100);
+    const std_msgs::msg::String::SharedPtr text_msg) {
+  std::string text = text_msg->data;
+  std::string language = "en";
+  int rate = static_cast<int>(0.67 * 175);
+  int volume = static_cast<int>(4.0 * 100);
 
   // Create audio file using espeak
   char temp_file[] = "tts_audio.wav";
@@ -116,7 +119,7 @@ void TtsNode::execute_callback(
   audio_common::WaveFile wf(temp_file_48k);
   if (!wf.open()) {
     RCLCPP_ERROR(this->get_logger(), "Error opening audio file: %s", temp_file);
-    goal_handle->abort(result);
+    // goal_handle->abort(result);
     return;
   }
 
@@ -132,14 +135,14 @@ void TtsNode::execute_callback(
 
   // Publish the audio data in chunks
   while (wf.read(data, this->chunk_)) {
-    if (!goal_handle->is_active()) {
-      return;
-    }
+    // if (!goal_handle->is_active()) {
+    //   return;
+    // }
 
-    if (goal_handle->is_canceling()) {
-      goal_handle->canceled(result);
-      return;
-    }
+    // if (goal_handle->is_canceling()) {
+    //   goal_handle->canceled(result);
+    //   return;
+    // }
 
     auto msg = audio_common_msgs::msg::AudioStamped();
     msg.header.stamp = this->get_clock()->now();
@@ -149,18 +152,15 @@ void TtsNode::execute_callback(
     msg.audio.info.format = 1;
     msg.audio.info.rate = wf.get_sample_rate();
 
-    auto feedback = std::make_shared<TTS::Feedback>();
-    feedback->audio = msg;
+    // auto feedback = std::make_shared<TTS::Feedback>();
+    // feedback->audio = msg;
 
     this->player_pub_->publish(msg);
-    goal_handle->publish_feedback(feedback);
+    // goal_handle->publish_feedback(feedback);
     pub_rate.sleep();
   }
 
   // Cleanup and set result
   std::remove(temp_file);
   std::remove(temp_file_48k);
-
-  result->text = text;
-  goal_handle->succeed(result);
 }

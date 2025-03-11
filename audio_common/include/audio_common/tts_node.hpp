@@ -41,7 +41,7 @@
 #include "audio_common/wave_file.hpp"
 #include "audio_common_msgs/action/tts.hpp"
 #include "audio_common_msgs/msg/audio_stamped.hpp"
-
+#include "std_msgs/msg/string.hpp"
 namespace audio_common {
 
 class TtsNode : public rclcpp::Node {
@@ -56,6 +56,7 @@ private:
   std::string frame_id_;
   rclcpp::Publisher<audio_common_msgs::msg::AudioStamped>::SharedPtr
       player_pub_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr text_sub;
   rclcpp_action::Server<TTS>::SharedPtr action_server_;
   std::mutex goal_lock_;
   std::shared_ptr<GoalHandleTTS> goal_handle_;
@@ -67,7 +68,7 @@ private:
   rclcpp_action::CancelResponse
   handle_cancel(const std::shared_ptr<GoalHandleTTS> goal_handle);
   void handle_accepted(const std::shared_ptr<GoalHandleTTS> goal_handle);
-  void execute_callback(const std::shared_ptr<GoalHandleTTS> goal_handle);
+  void execute_callback(const std_msgs::msg::String::SharedPtr msg);
 };
 
 } // namespace audio_common
