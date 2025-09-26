@@ -96,7 +96,7 @@ TtsNode::TtsNode() : Node("tts_node") {
 void TtsNode::execute_callback(
     const std_msgs::msg::String::SharedPtr text_msg) {
   std::string text = text_msg->data;
-  std::string language = "en";
+  std::string language = "en+f2";
   int rate = static_cast<int>(0.67 * 175);
   int volume = static_cast<int>(4.0 * 100);
 
@@ -106,13 +106,14 @@ void TtsNode::execute_callback(
   cmd << "espeak -v" << language << " -s" << rate << " -a" << volume << " -w "
       << temp_file << " '" << text << "'";
 
+  RCLCPP_WARN(this->get_logger(), "Executing command: %s", cmd.str().c_str());
   std::system(cmd.str().c_str());
 
   char temp_file_48k[] = "tts_audio_48k.wav";
   std::stringstream cmd1;
   cmd1 << "sox " << temp_file <<" -r " << 48000 << " " << temp_file_48k<<"";
   printf(cmd1.str().c_str());
-
+  RCLCPP_WARN(this->get_logger(), "Executing command: %s", cmd1.str().c_str());
   std::system(cmd1.str().c_str());
 
   // Read audio file
