@@ -96,14 +96,14 @@ TtsNode::TtsNode() : Node("tts_node") {
 void TtsNode::execute_callback(
     const std_msgs::msg::String::SharedPtr text_msg) {
   std::string text = text_msg->data;
-  std::string language = "en+f2";
-  int rate = static_cast<int>(0.67 * 175);
+  std::string language = "slt";
+  double rate = 1.0;
   int volume = static_cast<int>(4.0 * 100);
 
   // Create audio file using espeak
   char temp_file[] = "tts_audio.wav";
   std::stringstream cmd;
-  cmd << "flite -voice slt -t " << " '" << text << "' -o " << temp_file;
+  cmd << "flite -voice " << language << " --setf duration_stretch=" << (1.0/rate) << " -t '" << text << "' -o " << temp_file;
 
   RCLCPP_WARN(this->get_logger(), "Executing command: %s", cmd.str().c_str());
   std::system(cmd.str().c_str());
