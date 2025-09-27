@@ -103,8 +103,7 @@ void TtsNode::execute_callback(
   // Create audio file using espeak
   char temp_file[] = "tts_audio.wav";
   std::stringstream cmd;
-  cmd << "espeak -v" << language << " -s" << rate << " -a" << volume << " -w "
-      << temp_file << " '" << text << "'";
+  cmd << "flite -voice slt -t " << " '" << text << "' -o " << temp_file;
 
   RCLCPP_WARN(this->get_logger(), "Executing command: %s", cmd.str().c_str());
   std::system(cmd.str().c_str());
