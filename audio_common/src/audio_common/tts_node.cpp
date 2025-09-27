@@ -104,8 +104,8 @@ void TtsNode::execute_callback(
   char temp_file[] = "tts_audio.wav";
   std::stringstream cmd;
 
-  const char* flite_env = std::getenv("IS_FLITE_AVAILABLE");
-  if (flite_env) {
+  const std::string flite_env = std::getenv("IS_FLITE_AVAILABLE");
+  if (flite_env == "true") {
     cmd << "flite -voice slt -t '" << text << "' -o " << temp_file;
   } else {
     cmd << "espeak -v" << language << " -s" << rate << " -a" << volume
