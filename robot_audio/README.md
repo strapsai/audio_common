@@ -147,3 +147,33 @@ moving and look at me. Measuring vitals.”, with text, model provenance and WAV
 in `robot_audio/clips/vitals_measurement.json`. Bundled clips are listed by `list_clips`
 and available to the play service. Files in configured `clips_dir` override matching
 bundled names. Existing Piper/voices startup requirements for text-to-speech remain.
+
+
+## Generate recordings on an offline base station
+
+Build this repository's `robot_audio` package in `basestation_spot_ws`. The base
+station needs standalone Piper and SoX installed in its image. This command
+imports no ROS modules and uses no ROS graph, network or sound device:
+
+```bash
+python3 -m robot_audio.generate_clip \
+  --voices-dir "$AIRLAB_PATH/weights/audio/voices" \
+  --voice en_US-lessac-medium \
+  --text 'Please stop moving and look at me. Measuring vitals.' \
+  --output "$AIRLAB_PATH/audio/clips/vitals_custom.wav"
+```
+
+`ros2 run robot_audio generate_clip` is also available in a correctly configured
+ROS shell. The Python command avoids ROS CLI/DDS initialization entirely.
+Use `--text-file path/to/words.txt` instead of `--text` for UTF-8 input from a file.
+Output is 48 kHz stereo 16-bit PCM, with no playback gain applied. Existing files
+are never replaced; choose a new name when revising a recording. Failed synthesis
+or conversion publishes no clip. `--piper`, `--converter` and `--timeout` override
+the tool paths and per-process deadline.
+
+Prepare models on a networked base station using `download_voices`, or restore
+verified voice assets with `airlab-assets`. Generation itself works offline.
+Manage voice files and recordings with the Airlab audio asset manifests, then
+manually `airlab sync` `weights/audio/voices` and `audio/clips` to the arm computers.
+No downloader runs during robot startup. On-the-fly `say` also works offline once
+the voice models have been copied to the robot.

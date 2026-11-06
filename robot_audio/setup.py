@@ -12,4 +12,5 @@ setup(name='robot_audio', version='0.1.0', packages=['robot_audio'],
       entry_points={'console_scripts': [
           'speaker_node = robot_audio.node:main',
           'speaker_service_bridge = robot_audio.service_bridge:main',
+          'generate_clip = robot_audio.generate_clip:main',
           'download_voices = robot_audio.download_voices:main']})
