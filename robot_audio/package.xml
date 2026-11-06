@@ -4,7 +4,7 @@
   <description>Interruptible USB speaker playback and offline Piper speech services</description>
   <maintainer email="airlab@andrew.cmu.edu">AirLab</maintainer><license>MIT</license>
   <buildtool_depend>ament_python</buildtool_depend>
-  <exec_depend>rclpy</exec_depend><exec_depend>audio_common_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend><exec_depend>sensor_msgs</exec_depend><exec_depend>audio_common_msgs</exec_depend>
   <exec_depend>std_srvs</exec_depend><exec_depend>launch_ros</exec_depend>
   <exec_depend>alsa-utils</exec_depend><exec_depend>sox</exec_depend>
   <test_depend>python3-pytest</test_depend>

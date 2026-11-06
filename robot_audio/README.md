@@ -130,3 +130,20 @@ interruption during synthesis, error recovery, and real three-domain ROS service
 forwarding. Real Piper/SoX output can be validated separately by substituting a
 file-writing player; no physical sound is necessary. Fast DDS was used for the
 offline ROS tests; field Connext and audible speaker acceptance are separate.
+
+
+## Optional Yawman announcement
+
+`hotkey_enabled` defaults to false. Enable it and set `joy_topic` to the routed,
+normalized robot Joy topic (e.g. `/spot2/base/spot/joy`) to bind LT+X to
+`announcement_clip` (default `vitals_measurement.wav`). It plays once, interrupting
+current audio. Release X before another press. Release buttons/triggers after
+startup or a stale-input gap before triggering. RT and extra buttons are rejected.
+There is no radar or mode-state dependency, so it works inside and outside inspections.
+Use the matching `joystick_commander` update that reserves LT+X instead of GPS Align.
+
+The installed package includes a pre-generated Piper Lessac WAV saying “Please stop
+moving and look at me. Measuring vitals.”, with text, model provenance and WAV checksum
+in `robot_audio/clips/vitals_measurement.json`. Bundled clips are listed by `list_clips`
+and available to the play service. Files in configured `clips_dir` override matching
+bundled names. Existing Piper/voices startup requirements for text-to-speech remain.

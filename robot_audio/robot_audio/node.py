@@ -1,10 +1,14 @@
-"""Service-only control surface. Playback never blocks a ROS callback."""
+"""Services and optional joystick hotkey; playback runs on a worker thread."""
+import time
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from std_srvs.srv import Trigger
 from audio_common_msgs.srv import PlayAudio, SayAudio, AudioStatus, ListAudio
 from .controller import AudioController
+from .hotkey import AudioHotkey
+from sensor_msgs.msg import Joy
+from rclpy.qos import qos_profile_sensor_data
 
 
 class SpeakerNode(Node):
@@ -12,12 +16,21 @@ class SpeakerNode(Node):
         super().__init__('audio', **kwargs)
         defaults = dict(clips_dir='', voices_dir='', device='plughw:CARD=UACDemoV10,DEV=0',
                         piper_binary='/opt/piper/piper', default_voice='en_US-lessac-medium',
-                        gain=0.7, processing_timeout_sec=60.0)
+                        gain=0.7, processing_timeout_sec=60.0,
+                        hotkey_enabled=False, joy_topic='', announcement_clip='vitals_measurement.wav')
         for key, value in defaults.items(): self.declare_parameter(key, value)
         value = lambda name: self.get_parameter(name).value
         self.controller = AudioController(value('clips_dir'), value('voices_dir'), device=value('device'),
             piper=value('piper_binary'), default_voice=value('default_voice'), gain=value('gain'),
             timeout=value('processing_timeout_sec'))
+        if value('hotkey_enabled'):
+            if not value('joy_topic').startswith('/'):
+                raise ValueError('Configure an absolute routed robot joy_topic')
+            self.controller._clip(value('announcement_clip'))  # Fail loudly at startup.
+            self.hotkey = AudioHotkey()
+            self.announcement_clip = value('announcement_clip')
+            self.create_subscription(Joy, value('joy_topic'), self.on_joy, qos_profile_sensor_data)
+            self.get_logger().info(f"LT+X audio enabled on {value('joy_topic')}")
         self.create_service(PlayAudio, '~/play', self.play)
         self.create_service(SayAudio, '~/say', self.say)
         self.create_service(Trigger, '~/stop', self.stop)
@@ -25,7 +38,17 @@ class SpeakerNode(Node):
         self.create_service(ListAudio, '~/list_clips', self.list_clips)
         self._last_state = None
         self.create_timer(.2, self.log_status)
-        self.get_logger().info('USB audio ready: Piper required; playback awaits a service request')
+        self.get_logger().info('USB audio ready: Piper required; playback awaits a request')
+
+    def on_joy(self, msg):
+        stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        now = self.get_clock().now().nanoseconds * 1e-9
+        if self.hotkey.observe(msg.axes, msg.buttons, stamp, now, time.monotonic()):
+            try:
+                job = self.controller.play(self.announcement_clip, loop=False, interrupt=True)
+                self.get_logger().info(f'LT+X announcement accepted: {job}')
+            except Exception as error:
+                self.get_logger().error(f'LT+X announcement failed: {error}')
 
     @staticmethod
     def _accept(response, submit):

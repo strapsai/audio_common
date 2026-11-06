@@ -95,3 +95,53 @@ def test_two_robots_through_base_service_proxy(rig,monkeypatch):
         for context in reversed(contexts):
             if context.ok():context.shutdown()
         for worker in workers:worker.join(timeout=2)
+
+
+def test_routed_joy_plays_bundled_clip_once_without_synthesis(rig, monkeypatch):
+    from sensor_msgs.msg import Joy
+    from rclpy.qos import qos_profile_sensor_data
+    assert set(os.listdir('/sys/class/net')) == {'lo'}
+    _, events, clips, voices, binpath = rig
+    monkeypatch.setenv('PATH', str(binpath)+os.pathsep+os.environ['PATH'])
+    context = Context()
+    rclpy.init(args=[], context=context, domain_id=204)
+    speaker = SpeakerNode(context=context, namespace='/spot2', parameter_overrides=[
+        Parameter('clips_dir', value=str(clips)), Parameter('voices_dir', value=str(voices)),
+        Parameter('piper_binary', value=str(binpath/'piper')),
+        Parameter('hotkey_enabled', value=True),
+        Parameter('joy_topic', value='/spot2/base/spot/joy')])
+    sender = Node('offline_joy_test', context=context)
+    publisher = sender.create_publisher(Joy, '/spot2/base/spot/joy', qos_profile_sensor_data)
+    executor = MultiThreadedExecutor(num_threads=2, context=context)
+    executor.add_node(speaker)
+    executor.add_node(sender)
+    worker = threading.Thread(target=executor.spin, daemon=True)
+    worker.start()
+    try:
+        wait(lambda: publisher.get_subscription_count() == 1)
+        def send(lt=False, x=False):
+            message = Joy()
+            message.header.stamp = sender.get_clock().now().to_msg()
+            message.axes = [0., 0., -1. if lt else 0., 0., 0., 0., 0., 0.]
+            message.buttons = [0]*11
+            message.buttons[2] = int(x)
+            publisher.publish(message)
+            time.sleep(.03)
+        send()  # Fresh neutral baseline.
+        send(lt=True, x=True)
+        wait(lambda: len([e for e in events() if e['tool'] == 'aplay']) == 1)
+        for _ in range(4):
+            send(lt=True, x=True)
+        assert len([e for e in events() if e['tool'] == 'aplay']) == 1
+        send(lt=True)
+        send(lt=True, x=True)
+        wait(lambda: len([e for e in events() if e['tool'] == 'aplay']) == 2)
+        assert not any(e['tool'] == 'piper' for e in events())
+        assert all(e['source'].endswith('vitals_measurement.wav')
+                   for e in events() if e['tool'] == 'sox')
+    finally:
+        executor.shutdown(timeout_sec=3)
+        speaker.destroy_node()
+        sender.destroy_node()
+        context.shutdown()
+        worker.join(timeout=2)

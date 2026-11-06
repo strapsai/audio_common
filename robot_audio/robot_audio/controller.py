@@ -40,6 +40,7 @@ class AudioController:
             raise ValueError('clips_dir and voices_dir must be configured explicitly')
         self.clips_dir = Path(clips_dir).resolve(strict=True)
         self.voices_dir = Path(voices_dir).resolve(strict=True)
+        self.builtin_clips_dir = Path(__file__).resolve().parent / 'clips'
         if not self.clips_dir.is_dir() or not self.voices_dir.is_dir():
             raise ValueError('clips_dir and voices_dir must be directories')
         if not device or device in ('default', 'sysdefault'):
@@ -80,7 +81,10 @@ class AudioController:
         return path
 
     def _clip(self, name):
-        path = self._inside(self.clips_dir, name)
+        try:
+            path = self._inside(self.clips_dir, name)
+        except FileNotFoundError:
+            path = self._inside(self.builtin_clips_dir, name)
         if path.suffix.lower() not in ('.wav', '.mp3', '.flac', '.ogg'):
             raise ValueError('Supported clips: WAV, MP3, FLAC, OGG')
         return path
@@ -101,14 +105,15 @@ class AudioController:
 
     def list_assets(self):
         clips = []
-        for path in self.clips_dir.rglob('*'):
-            if path.suffix.lower() in ('.wav', '.mp3', '.flac', '.ogg'):
-                try:
-                    name = str(path.relative_to(self.clips_dir))
-                    self._clip(name)
-                    clips.append(name)
-                except (ValueError, OSError):
-                    continue
+        for root in (self.clips_dir, self.builtin_clips_dir):
+            for path in root.rglob('*'):
+                if path.suffix.lower() in ('.wav', '.mp3', '.flac', '.ogg'):
+                    try:
+                        name = str(path.relative_to(root))
+                        self._clip(name)
+                        clips.append(name)
+                    except (ValueError, OSError):
+                        continue
         voices = []
         for path in self.voices_dir.glob('*.onnx'):
             try:
@@ -116,7 +121,7 @@ class AudioController:
                 voices.append(path.stem)
             except (ValueError, OSError):
                 continue
-        return sorted(clips), sorted(voices)
+        return sorted(set(clips)), sorted(voices)
 
     def play(self, clip, loop=False, interrupt=True):
         self._clip(clip)
