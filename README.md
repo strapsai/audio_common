@@ -174,3 +174,12 @@ ros2 run audio_common audio_player_node
 ```shell
 ros2 service call /music_play audio_common_msgs/srv/MusicPlay "{audio: 'elevator'}"
 ```
+
+## Spot USB speaker services
+
+The additional [robot_audio package](robot_audio/README.md) provides interruptible
+local clip playback/looping, selectable offline Piper voices, and service-only
+control. It targets the Jieli USB speakers on the Spot arm computers. It is
+independent of the original topic-streaming player/TTS nodes and includes typed
+base-to-robot service proxies. Build `audio_common_msgs` and `robot_audio`; see
+the package guide for asset preparation and CLI examples.

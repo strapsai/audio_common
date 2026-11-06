@@ -1,0 +1,12 @@
+---
+bool success
+bool busy
+string state
+string job_id
+string kind
+string source
+string voice
+bool loop
+uint32 queued
+string last_error
+string message

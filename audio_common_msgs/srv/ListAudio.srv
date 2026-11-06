@@ -1,0 +1,6 @@
+---
+bool success
+string[] clips
+string[] voices
+string default_voice
+string message

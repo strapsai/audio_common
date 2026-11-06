@@ -1,0 +1,8 @@
+string text
+string voice ""
+bool loop false
+bool interrupt true
+---
+bool success
+string job_id
+string message
