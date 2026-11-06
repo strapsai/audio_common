@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>robot_audio</name><version>0.1.0</version>
+  <description>Interruptible USB speaker playback and offline Piper speech services</description>
+  <maintainer email="airlab@andrew.cmu.edu">AirLab</maintainer><license>MIT</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend><exec_depend>audio_common_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend><exec_depend>launch_ros</exec_depend>
+  <exec_depend>alsa-utils</exec_depend><exec_depend>sox</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>
