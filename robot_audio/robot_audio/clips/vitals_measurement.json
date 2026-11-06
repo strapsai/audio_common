@@ -1,0 +1,8 @@
+{
+  "text": "Please stop moving and look at me. Measuring vitals.",
+  "voice": "en_US-lessac-medium",
+  "model_sha256": "5efe09e69902187827af646e1a6e9d269dee769f9877d17b16b1b46eeaaf019f",
+  "wav_sha256": "fed8cd21e1d8106a726c5ae64c739885a048fa5d6fd15c269c875b3017d4229f",
+  "generator": "Piper 2023.11.14-2; SoX 48000 Hz stereo signed 16-bit PCM; playback applies configured gain",
+  "model_card": "# Model card for lessac (medium)\n\n* Language: en_US (English, United States)\n* Speakers: 1\n* Quality: medium\n* Samplerate: 22,050Hz\n\n## Dataset\n\n* URL: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/\n* License: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/license.html\n\n## Training\n\nTrained from scratch.\n"
+}

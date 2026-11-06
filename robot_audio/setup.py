@@ -2,7 +2,7 @@ from glob import glob
 from setuptools import setup
 
 setup(name='robot_audio', version='0.1.0', packages=['robot_audio'],
-      package_data={'robot_audio': ['voices.json']},
+      package_data={'robot_audio': ['voices.json', 'clips/*.wav', 'clips/*.json']},
       data_files=[('share/ament_index/resource_index/packages', ['resource/robot_audio']),
                   ('share/robot_audio', ['package.xml', 'README.md']),
                   ('share/robot_audio/launch', glob('launch/*.py'))],

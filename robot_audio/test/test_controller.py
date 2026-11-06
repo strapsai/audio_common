@@ -136,7 +136,7 @@ def test_assets_reject_escape_and_incomplete_voice(rig,tmp_path):
     (voices/'incomplete.onnx').write_bytes(b'model')
     with pytest.raises(ValueError):c.play('escape.wav')
     clips_list,voice_list=c.list_assets()
-    assert clips_list==['hello.wav','other.wav']
+    assert clips_list==['hello.wav','other.wav','vitals_measurement.wav']
     assert voice_list==['en_US-lessac-medium','en_US-ryan-medium']
     assert not events()
 
@@ -174,3 +174,14 @@ def test_close_interrupts_active_loop(rig):
     start=time.monotonic();c.close()
     assert time.monotonic()-start<.6
     assert not c._worker.is_alive()
+
+
+def test_bundled_announcement_plays_without_synthesis_and_can_be_overridden(rig):
+    c, events, clips, *_ = rig
+    job = c.play('vitals_measurement.wav')
+    wait(lambda: c.status()['job_id'] == job and c.status()['state'] == 'done')
+    assert not any(e['tool'] == 'piper' for e in events())
+    assert any(e['tool'] == 'aplay' for e in events())
+    assert 'robot_audio/clips/vitals_measurement.wav' in str(c._clip('vitals_measurement.wav'))
+    (clips/'vitals_measurement.wav').write_bytes((clips/'hello.wav').read_bytes())
+    assert c._clip('vitals_measurement.wav') == clips/'vitals_measurement.wav'
